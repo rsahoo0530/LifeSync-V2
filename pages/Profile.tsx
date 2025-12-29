@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
@@ -13,11 +12,12 @@ export const Profile: React.FC = () => {
   
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
       // Pass the new password (if set) to the context
-      updateUser({
+      await updateUser({
           ...formData,
           email: newEmail
       }, newPassword || undefined);
@@ -28,12 +28,22 @@ export const Profile: React.FC = () => {
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files?.[0]) {
+          setIsUploading(true);
           try {
+              // 1. Upload to Cloudinary
               const url = await uploadImage(e.target.files[0]);
-              updateUser({ avatar: url });
+              
+              // 2. Update local state for preview
               setFormData(prev => ({ ...prev, avatar: url }));
-          } catch (error) {
-              showToast('Failed to upload image', 'error');
+              
+              // 3. Enable edit mode so user can see the "Save Changes" button
+              setIsEditing(true);
+              
+              showToast('Image uploaded! Click "Save Changes" to confirm.', 'info');
+          } catch (error: any) {
+              showToast(error.message || 'Failed to upload image', 'error');
+          } finally {
+              setIsUploading(false);
           }
       }
   };
@@ -51,9 +61,14 @@ export const Profile: React.FC = () => {
             <div className="flex flex-col items-center mb-10 relative">
                 <div className="w-full h-32 bg-gradient-to-r from-primary to-secondary absolute top-0 left-0 rounded-t-3xl opacity-10"></div>
                 <div className="relative group mt-8">
-                    <div className="w-32 h-32 rounded-full p-1 bg-white dark:bg-darkcard overflow-hidden">
+                    <div className="w-32 h-32 rounded-full p-1 bg-white dark:bg-darkcard overflow-hidden relative">
+                        {isUploading && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        )}
                         <img 
-                            src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} 
+                            src={formData.avatar || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} 
                             className="w-full h-full rounded-full object-cover" 
                             alt="Avatar" 
                             onError={(e) => {
@@ -63,7 +78,7 @@ export const Profile: React.FC = () => {
                     </div>
                     <label className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-indigo-600 transition-colors z-10">
                         <Camera size={18} />
-                        <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                        <input type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleAvatarChange} disabled={isUploading} />
                     </label>
                 </div>
                 <h3 className="mt-4 text-2xl font-bold text-gray-900 dark:text-white">{user.name}</h3>
@@ -119,7 +134,7 @@ export const Profile: React.FC = () => {
                     {isEditing ? (
                         <>
                             <Button type="button" variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
-                            <Button type="submit">Save Changes</Button>
+                            <Button type="submit" isLoading={isUploading}>Save Changes</Button>
                         </>
                     ) : (
                         <Button type="button" onClick={() => setIsEditing(true)} className="w-full md:w-auto">Edit Profile</Button>

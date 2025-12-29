@@ -338,7 +338,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Initial DB setup
         try {
             await setDoc(doc(db, 'users', userCredential.user.uid), {
-                profile: { bio: 'New Member' },
+                profile: { 
+                    bio: 'New Member',
+                    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}` 
+                },
                 settings: { soundEnabled: true, darkMode: true }
             });
         } catch (e) { console.error("Initial doc error", e); }
@@ -406,7 +409,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const profileUpdates = {
                 bio: updates.bio,
                 gender: updates.gender,
-                dob: updates.dob
+                dob: updates.dob,
+                avatar: updates.avatar // Also save avatar URL to Firestore
             };
             Object.keys(profileUpdates).forEach(key => (profileUpdates as any)[key] === undefined && delete (profileUpdates as any)[key]);
             
