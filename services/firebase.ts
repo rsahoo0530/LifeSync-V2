@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getDatabase, ref, onValue } from "firebase/database";
+import { getDatabase } from "firebase/database";
 
 // Your Firebase project's configuration
 const firebaseConfig = {
@@ -16,22 +16,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase App
-console.log("Initializing Firebase App (v10.8.0 via gstatic)...");
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services and export them
 export const auth = getAuth(app);          
 export const db = getFirestore(app);       
-export const database = getDatabase(app);  
-
-console.log("Firebase Services Initialized Successfully");
-
-// Monitor connection state
-const connectedRef = ref(database, ".info/connected");
-onValue(connectedRef, (snapshot) => {
-  if (snapshot.val() === true) {
-    console.log("Firebase Realtime Database: CONNECTED");
-  } else {
-    console.log("Firebase Realtime Database: Checking connection...");
-  }
-});
+export const database = getDatabase(app);
